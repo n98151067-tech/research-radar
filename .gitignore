@@ -1,0 +1,18 @@
+# 每次執行都會產生的資料與結果（含期刊的英文摘要，不放進公開 repo）
+data/
+output/
+
+# 寫入中途的暫存檔
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 作業系統與編輯器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

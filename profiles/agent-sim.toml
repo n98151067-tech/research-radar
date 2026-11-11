@@ -1,0 +1,17 @@
+name = "模擬學生的 LLM Agent"
+
+# 適用期刊分類（對應 journals.toml 的 tags）；空白 [] 表示套用所有期刊
+groups = []
+
+description = """
+研究如何用大型語言模型（LLM）Agent 模擬不同能力程度與認知狀態的學生，
+例如程度高低、迷思概念、學習動機或注意力不同的學習者。
+關注 Agent 在學習情境中的推理過程，以及 Agent 與 Agent、Agent 與教師或真人學生之間的互動。
+特別在意 LLM Agent 系統的設計、模擬的擬真度與評估方法，以及用模擬學生來測試教學策略或訓練教師。
+"""
+
+keywords = [
+    "LLM agents", "simulated students", "student simulation", "learner modeling",
+    "cognitive states", "ability levels", "misconceptions", "multi-agent systems",
+    "agent reasoning", "agent interaction", "generative agents", "role-play", "teacher training",
+]

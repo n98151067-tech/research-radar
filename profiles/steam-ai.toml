@@ -1,0 +1,16 @@
+name = "STEAM 與 AI 教育"
+
+# 適用期刊分類（對應 journals.toml 的 tags）；空白 [] 表示套用所有期刊
+groups = []
+
+description = """
+研究 STEAM 教育中的動手做與工程設計學習，包括 3D 列印結構、機械原理、工程設計流程與問題解決。
+關注學生如何透過 AI 程式控制（例如控制機器人或裝置）學習，以及學習過程中的提問、推理、除錯與知識遷移。
+也關注 AI 融入教育的教學設計與成效，特別是 AI 如何支持學生的問題解決與高層次思考。
+"""
+
+keywords = [
+    "STEAM", "STEM education", "3D printing", "engineering design", "mechanisms", "maker education",
+    "problem solving", "programming", "robotics", "computational thinking", "student questioning",
+    "reasoning", "debugging", "knowledge transfer", "AI in education", "hands-on learning",
+]

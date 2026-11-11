@@ -1,0 +1,17 @@
+name = "情緒、推理、記憶的 AI 系統"
+
+# 適用期刊分類（對應 journals.toml 的 tags）；空白 [] 表示套用所有期刊
+groups = []
+
+description = """
+研究結合情緒辨識、推理與記憶機制的 AI 系統，以及能隨互動動態更新的內在模型
+（例如對使用者狀態、情緒或世界的內部表徵）。
+偏好 AI／資訊工程取向的系統論文：系統架構、模型設計、演算法與實驗評估，
+包括情感運算、具記憶的對話代理、認知架構，以及這些技術在教育或人機互動中的應用。
+"""
+
+keywords = [
+    "emotion recognition", "affective computing", "sentiment", "multimodal emotion",
+    "memory mechanisms", "long-term memory", "internal model", "world model", "user modeling",
+    "cognitive architecture", "reasoning", "conversational agents", "human-AI interaction",
+]

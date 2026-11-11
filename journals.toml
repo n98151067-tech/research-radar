@@ -1,0 +1,19 @@
+# 追蹤的期刊清單。新增期刊：複製一段 [[journal]]，修改內容即可。
+#
+# id          期刊代號（英文，不能重複）
+# name        期刊全名
+# issn_print  紙本 ISSN
+# issn_online 電子版 ISSN
+# tags        分類標籤，可以有多個，例如 "SSCI"、"SCI"、"Scopus"、"教育科技"
+#             執行時可用 --group SSCI 只跑某一類；興趣設定檔的 groups 也對應這裡的標籤
+# source      資料來源，目前支援 "springer"
+# springer_id Springer 期刊編號，即期刊網址 link.springer.com/journal/<編號> 中的數字
+
+[[journal]]
+id = "eit"
+name = "Education and Information Technologies"
+issn_print = "1360-2357"
+issn_online = "1573-7608"
+tags = ["SSCI", "教育科技"]
+source = "springer"
+springer_id = "10639"

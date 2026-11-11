@@ -1,0 +1,13 @@
+# ResearchRadar 設定
+
+# AI 模型：claude-sonnet-5-5（較快、額度用得少）或 claude-opus-5-5（判斷較細）
+model = "claude-sonnet-5-5"
+
+# 同時進行的 AI 分析數量
+workers = 4
+
+# 單次 AI 呼叫的時間上限（秒）
+timeout_seconds = 300
+
+# claude 執行檔位置；留空時自動尋找
+# claude_path = ""
