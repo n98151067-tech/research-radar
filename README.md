@@ -160,4 +160,9 @@ ResearchRadar/
   data/             所有處理過的文章與 AI 結果（articles.json）
   SPEC.md           規格書
   README.md         本文件
+  LICENSE           MIT 授權條款
 ```
+
+## 授權
+
+本專案採用 [MIT License](LICENSE)，Copyright (c) 2026 wen。
