@@ -35,12 +35,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "data" / "articles.json"
+FETCH_LOG_FILE = ROOT / "data" / "fetch_log.json"  # 每本期刊上次成功抓取的日期
 OUTPUT_DIR = ROOT / "output"
 PROFILES_DIR = ROOT / "profiles"
 
 USER_AGENT = "ResearchRadar/0.1 (personal journal alerts)"
 FIRST_RUN_DAYS = 30  # 第一次執行往回抓的天數
-LATER_RUN_DAYS = 14  # 之後每次執行檢查的天數（已處理過的文章會跳過）
+LATER_RUN_DAYS = 14  # 之後每次至少往回檢查的天數；隔太久沒執行時，會從上次抓取的日期補抓
 
 METHOD_CATEGORIES = ["量化研究", "質性研究", "混合方法", "系統性回顧／後設分析", "設計本位研究", "系統開發與評估"]
 
@@ -173,6 +174,38 @@ class State:
             tmp = STATE_FILE.with_suffix(".tmp")
             tmp.write_text(json.dumps(self.articles, ensure_ascii=False, indent=1), encoding="utf-8")
             tmp.replace(STATE_FILE)
+
+
+# ---------- 抓取日期 ----------
+
+def load_fetch_log() -> dict[str, str]:
+    return json.loads(FETCH_LOG_FILE.read_text(encoding="utf-8")) if FETCH_LOG_FILE.exists() else {}
+
+
+def save_fetch_log(log: dict[str, str]):
+    FETCH_LOG_FILE.parent.mkdir(exist_ok=True)
+    tmp = FETCH_LOG_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+    tmp.replace(FETCH_LOG_FILE)
+
+
+def last_fetch(journal: dict, state: State, log: dict[str, str]) -> dt.date | None:
+    """上次成功抓取這本期刊的日期。沒有紀錄時（v0.2 以前的資料）改用已收錄文章中最新的發表日期。"""
+    if journal["id"] in log:
+        return dt.date.fromisoformat(log[journal["id"]])
+    dates = [a["date"] for a in state.articles.values() if a["journal"] == journal["id"]]
+    return dt.date.fromisoformat(max(dates)) if dates else None
+
+
+def fetch_since(journal: dict, state: State, log: dict[str, str], days: int | None, today: dt.date) -> dt.date:
+    """這次從哪天開始抓：--days 優先；從沒抓過抓 FIRST_RUN_DAYS 天；
+    否則從上次抓取日開始，但至少往回 LATER_RUN_DAYS 天（RSS 上的文章可能晚幾天才出現）。"""
+    if days:
+        return today - dt.timedelta(days=days)
+    last = last_fetch(journal, state, log)
+    if last is None:
+        return today - dt.timedelta(days=FIRST_RUN_DAYS)
+    return min(last, today - dt.timedelta(days=LATER_RUN_DAYS))
 
 
 # ---------- 抓資料 ----------
@@ -489,7 +522,7 @@ def main():
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description="ResearchRadar：期刊新文章 AI 推薦")
-    ap.add_argument("--days", type=int, help=f"往回抓幾天（第一次預設 {FIRST_RUN_DAYS}，之後預設 {LATER_RUN_DAYS}）")
+    ap.add_argument("--days", type=int, help=f"往回抓幾天（預設：第一次 {FIRST_RUN_DAYS} 天，之後從上次抓取日補抓，至少 {LATER_RUN_DAYS} 天）")
     ap.add_argument("--profile", action="append", help="只跑這組設定檔（可重複指定）；不指定時跳出選單")
     ap.add_argument("--all", action="store_true", help="所有設定檔都跑")
     ap.add_argument("--no-open", action="store_true", help="跑完不要自動打開報告")
@@ -522,15 +555,26 @@ def main():
     print(f"設定檔：{', '.join(profiles)}")
     journal_map = {j["id"]: j for j in journals}
 
-    days = args.days or (LATER_RUN_DAYS if state.articles else FIRST_RUN_DAYS)
-    since = dt.date.today() - dt.timedelta(days=days)
+    today = dt.date.today()
+    fetch_log = load_fetch_log()
+    since_by = {j["id"]: fetch_since(j, state, fetch_log, args.days, today) for j in journals}
+    since = min(since_by.values())  # HTML 報告的收錄起點
     new_dois: set[str] = set()
 
     # 1. 抓新文章
     if not args.rescore:
         for journal in journals:
-            print(f"抓取 {journal['name']}（{since} 之後）")
-            fetched = SOURCES[journal["source"]](journal, since)
+            start = since_by[journal["id"]]
+            print(f"抓取 {journal['name']}（{start} 之後）")
+            try:
+                fetched = SOURCES[journal["source"]](journal, start)
+            except Exception as e:
+                print(f"  抓取失敗（{e}），下次執行會從上次成功抓取的日期補抓")
+                continue
+            # 這次的區間有接上上次抓取日才更新紀錄，避免 --days 太短時留下沒抓到的空檔
+            last = last_fetch(journal, state, fetch_log)
+            if last is None or start <= last:
+                fetch_log[journal["id"]] = today.isoformat()
             new = [a for a in fetched if a["doi"] not in state.articles]
             print(f"  找到 {len(fetched)} 篇，其中 {len(new)} 篇是新的")
             for a in new:
@@ -542,6 +586,7 @@ def main():
                 new_dois.add(a["doi"])
                 time.sleep(0.2)
         state.save()
+        save_fetch_log(fetch_log)
 
     # 2. 找出要交給 AI 的工作
     claude = Claude(settings)
