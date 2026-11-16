@@ -52,6 +52,7 @@ NON_RESEARCH = re.compile(
 NOTE_NO_ABSTRACT = "無摘要，僅依標題"
 NOTE_NON_RESEARCH = "非研究文章"
 NOTE_FAILED = "AI 分析失敗，下次執行會重試"
+NOTE_PENDING = "尚未分析，下次處理這本期刊時會補上"
 
 CSV_COLUMNS = ["星等", "推薦理由", "一句話重點", "標題", "作者", "發表日期", "期刊", "DOI", "連結", "方法類別",
                "研究目的", "研究方法", "主要結果", "研究亮點", "結論", "備註"]
@@ -295,7 +296,8 @@ def profile_text(p: dict) -> str:
 
 # ---------- 主流程 ----------
 
-def make_rows(state: State, profile: dict, journals: dict[str, dict]) -> list[dict]:
+def make_rows(state: State, profile: dict, journals: dict[str, dict], processed: set[str]) -> list[dict]:
+    """processed：這次有交給 AI 處理的期刊。其他期刊（例如被 --group 排除）沒評分不算失敗。"""
     rows = []
     for a in state.articles.values():
         journal = journals.get(a["journal"])
@@ -310,7 +312,7 @@ def make_rows(state: State, profile: dict, journals: dict[str, dict]) -> list[di
             if not a["abstract"]:
                 notes.append(NOTE_NO_ABSTRACT)
             if not an or not sc:
-                notes.append(NOTE_FAILED)
+                notes.append(NOTE_FAILED if a["journal"] in processed else NOTE_PENDING)
         rows.append({
             "星等": sc.get("stars", ""), "推薦理由": sc.get("reason", ""), "一句話重點": an.get("tldr", ""),
             "標題": a["title"], "作者": a.get("authors", ""), "發表日期": a["date"],
@@ -597,7 +599,7 @@ def main():
     all_journals = {j["id"]: j for j in load_journals()}  # CSV 收錄所有期刊，不受 --group 影響
     reports = []
     for profile in profiles.values():
-        rows = make_rows(state, profile, all_journals)
+        rows = make_rows(state, profile, all_journals, set(journal_map))
         path = write_csv(profile, rows)
         print(f"輸出 {path.relative_to(ROOT)}：{len(rows)} 篇")
         # 報告收錄這次抓取區間內的文章
